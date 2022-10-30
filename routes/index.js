@@ -6,7 +6,7 @@ const fileController = require('../controllers/fileController');
 router.post('/', async function (req, res, next) {
   let data;
   console.log(req.body);
-  console.log();
+
   try {
     let from = req.body.from;
     let to = req.body.to;

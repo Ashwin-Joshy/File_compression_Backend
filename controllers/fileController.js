@@ -4,15 +4,19 @@ const archiver = require('archiver');
 const readline = require('readline');
 const { resolve } = require('path');
 const fileController = {
+    status: "Idle",
     archiveFile: async (fromPath, toPath, fromD, toD, zipName) => {
         return new Promise(async (resolve, reject) => {
             let output;
+            fileController.status = "Starting"
             let toDate = new Date(toD)
             console.log('toDate' + toDate);
             let fromDate = new Date(fromD)
             console.log('fromDate' + fromDate);
             try {
+
                 const files = await fsp.readdir(fromPath)
+                console.log('Length of files', files.length);
                 if (files.length == 0) {
                     reject('No files found');
                 }
@@ -25,6 +29,7 @@ const fileController = {
 
                 //Step 3 - callbacks 
                 output.on('close', () => {
+                    fileController.status = "Completed"
                     console.log('Archive finished.');
                     //output.end();
                     resolve('Done')
@@ -39,13 +44,15 @@ const fileController = {
                 for (let i = 0; i < files.length; i++) {
                     //await fileController.validateFile(`${fromPath}/${files[i]}`);
                     let fileDate;
-                    let stats=fs.statSync(`${fromPath}/${files[i]}`)
+                    let stats = fs.statSync(`${fromPath}/${files[i]}`)
                     fileDate = new Date(stats.mtimeMs);
                     console.log(fileDate);
                     console.log('Less than to date', fileDate < toDate);
                     console.log('Greater than from date', fileDate > fromDate);
-                    if (fileDate > fromDate && fileDate <= toDate) {
+                    if (fileDate > fromDate) {
                         archive.append(fs.createReadStream(`${fromPath}/${files[i]}`), { name: `${files[i]}` });
+
+                        fileController.status = (i + 1) / files.length * 100;
                     }
 
                 }
@@ -55,11 +62,20 @@ const fileController = {
 
             }
             catch (error) {
-                console.log('error', error);
+                console.log('error', error.code);
                 //output.emit('close')
-                output.end()
-                await fsp.rm(`${toPath}/${zipName}.zip`)
-                reject(error)
+                if (error.code == 'ENOENT') {
+                    console.log('No such file or directory');
+                    reject(error)
+                }
+                else {
+                    console.log('Passed if');
+                    output.end()
+                    await fsp.rm(`${toPath}/${zipName}.zip`)
+                    fileController.status = "Error"
+                    reject(error)
+                }
+
             }
         })
     },
