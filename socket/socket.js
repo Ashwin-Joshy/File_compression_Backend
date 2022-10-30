@@ -4,10 +4,8 @@ module.exports = (io, data) => {
         console.log('new connection', socket.id);
         socket.on('start', async (data) => {
             let fileController = require('../controllers/fileController');
-            console.log(data.from);
-            let result;
             try{
-                result = await fileController.archiveFile(data.from, data.to, data.fromdate, data.todate, data.zipname);
+                result = await fileController.archiveFile(data.from, data.to, data.fromdate, data.todate, data.zipname,socket);
             }
             catch(error){
                 result = error.message;

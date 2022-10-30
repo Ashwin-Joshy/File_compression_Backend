@@ -5,18 +5,14 @@ const readline = require('readline');
 const { resolve } = require('path');
 const fileController = {
     status: "Idle",
-    archiveFile: async (fromPath, toPath, fromD, toD, zipName) => {
+    archiveFile: async (fromPath, toPath, fromD, toD, zipName,socket) => {
         return new Promise(async (resolve, reject) => {
             let output;
             fileController.status = "Starting"
             let toDate = new Date(toD)
-            console.log('toDate' + toDate);
             let fromDate = new Date(fromD)
-            console.log('fromDate' + fromDate);
             try {
-
                 const files = await fsp.readdir(fromPath)
-                console.log('Length of files', files.length);
                 if (files.length == 0) {
                     reject('No files found');
                 }
@@ -31,7 +27,7 @@ const fileController = {
                 output.on('close', () => {
                     fileController.status = "Completed"
                     console.log('Archive finished.');
-                    //output.end();
+                    socket.emit('chat', `Completed`);
                     resolve('Done')
                 });
 
@@ -41,20 +37,21 @@ const fileController = {
                 });
                 //Step 4 - pipe and append files
                 archive.pipe(output);
+                let percentage = 0;
+                let fileDate;
+                let stats
                 for (let i = 0; i < files.length; i++) {
                     //await fileController.validateFile(`${fromPath}/${files[i]}`);
-                    let fileDate;
-                    let stats = fs.statSync(`${fromPath}/${files[i]}`)
+                    stats = fs.statSync(`${fromPath}/${files[i]}`)
                     fileDate = new Date(stats.mtimeMs);
                     console.log(fileDate);
                     console.log('Less than to date', fileDate < toDate);
                     console.log('Greater than from date', fileDate > fromDate);
                     if (fileDate > fromDate) {
                         archive.append(fs.createReadStream(`${fromPath}/${files[i]}`), { name: `${files[i]}` });
-
-                        fileController.status = (i + 1) / files.length * 100;
                     }
-
+                    percentage= (i) / files.length * 100;
+                    socket.emit('chat', `Processing ${percentage.toFixed(2)}%`);
                 }
 
                 //Step 5 - finalize
@@ -64,17 +61,16 @@ const fileController = {
             catch (error) {
                 console.log('error', error.code);
                 //output.emit('close')
-                if (error.code == 'ENOENT') {
-                    console.log('No such file or directory');
+                console.log('Tyww'+typeof output);
+                if (output == undefined) {
                     reject(error)
                 }
                 else {
-                    console.log('Passed if');
                     output.end()
                     await fsp.rm(`${toPath}/${zipName}.zip`)
-                    fileController.status = "Error"
                     reject(error)
                 }
+                
 
             }
         })
