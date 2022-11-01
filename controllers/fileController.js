@@ -5,10 +5,10 @@ const readline = require('readline');
 const { resolve } = require('path');
 const fileController = {
     status: "Idle",
-    archiveFile: async (fromPath, toPath, fromD, toD, zipName,socket) => {
+    archiveFile: async (fromPath, toPath, fromD, toD, zipName,socket,currentPath) => {
         return new Promise(async (resolve, reject) => {
+            fileController.status="Busy";
             let output;
-            fileController.status = "Starting"
             let toDate = new Date(toD)
             let fromDate = new Date(fromD)
             try {
@@ -25,9 +25,9 @@ const fileController = {
 
                 //Step 3 - callbacks 
                 output.on('close', () => {
-                    fileController.status = "Completed"
                     console.log('Archive finished.');
                     socket.emit('chat', `Completed`);
+                    fileController.status="Idle";
                     resolve('Done')
                 });
 
@@ -43,7 +43,7 @@ const fileController = {
                 for (let i = 0; i < files.length; i++) {
                     //await fileController.validateFile(`${fromPath}/${files[i]}`);
                     stats = fs.statSync(`${fromPath}/${files[i]}`)
-                    fileDate = new Date(stats.mtimeMs);
+                    fileDate = new Date(stats.mtimeMs); 
                     console.log(fileDate);
                     console.log('Less than to date', fileDate < toDate);
                     console.log('Greater than from date', fileDate > fromDate);
@@ -51,7 +51,7 @@ const fileController = {
                         archive.append(fs.createReadStream(`${fromPath}/${files[i]}`), { name: `${files[i]}` });
                     }
                     percentage= (i) / files.length * 100;
-                    socket.emit('chat', `Processing ${percentage.toFixed(2)}%`);
+                    socket.emit('chat', `Processing path ${currentPath} : ${percentage.toFixed(2)}%`);
                 }
 
                 //Step 5 - finalize
@@ -61,7 +61,7 @@ const fileController = {
             catch (error) {
                 console.log('error', error.code);
                 //output.emit('close')
-                console.log('Tyww'+typeof output);
+                fileController.status="Idle";
                 if (output == undefined) {
                     reject(error)
                 }

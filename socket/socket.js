@@ -4,16 +4,32 @@ module.exports = (io, data) => {
         console.log('new connection', socket.id);
         socket.on('start', async (data) => {
             let fileController = require('../controllers/fileController');
-            try{
-                result = await fileController.archiveFile(data.from, data.to, data.fromdate, data.todate, data.zipname,socket);
+            if (fileController.status != "Idle") {
+                socket.emit('chat', 'Server Busy, Please try again later');
             }
-            catch(error){
-                result = error.message;
+            else {
+                try {
+                    from = data.from.split(',');
+                    to = data.to.split(',');
+                    if (to.length !== from.length) {
+                        throw new Error('No of From and To paths are not equal');
+                    }
+                    console.log(from, 'FROM');
+                    console.log(to, 'TO');
+
+                    for (let i = 0; i < from.length; i++) {
+                        result = await fileController.archiveFile(from[i], to[i], data.fromdate, data.todate, data.zipname, socket, i + 1);
+
+                    }
+                }
+                catch (error) {
+                    result = error.message;
+                }
+                finally {
+                    socket.emit('chat', result);
+                }
             }
-            finally{
-                socket.emit('chat', result);
-            }
-           
+
         })
         socket.on('disconnect', () => console.log('disconnected'));
     })

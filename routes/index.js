@@ -8,12 +8,14 @@ router.post('/', async function (req, res, next) {
   console.log(req.body);
 
   try {
-    let from = req.body.from;
-    let to = req.body.to;
+    let from = req.body.from.split(',');
+    let to = req.body.to.split(',');
     let fromDate = req.body.fromdate;
     let toDate = req.body.todate;
     let zipName=req.body.zipname;
-    data = await fileController.archiveFile(from, to, fromDate, toDate, zipName);
+    console.log(from,to);
+    data='Done'
+    //data = await fileController.archiveFile(from, to, fromDate, toDate, zipName);
   }
   catch (err) {
     data = err
