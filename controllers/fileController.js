@@ -7,10 +7,12 @@ const fileController = {
     status: "Idle",
     archiveFile: async (fromPath, toPath, fromD, toD, zipName, socket, currentPath) => {
         return new Promise(async (resolve, reject) => {
+            console.log('here 0');
             fileController.status = "Busy";
             let output;
-            let toDate = new Date(toD)
+            let toDate = new Date(toD).setUTCHours(23, 59, 59, 999)
             let fromDate = new Date(fromD)
+            
             handleAsyncError = async (error) => {
                 console.log('error', error);
                 //output.emit('close')
@@ -26,6 +28,7 @@ const fileController = {
             }
             try {
                 const files = await fsp.readdir(fromPath)
+                console.log('here 1');
                 if (files.length == 0) {
                     reject('No files found');
                 }
@@ -63,13 +66,17 @@ const fileController = {
                     console.log(fileDate);
                     console.log('Less than to date', fileDate < toDate);
                     console.log('Greater than from date', fileDate > fromDate);
-                    if (stats.isDirectory()) {
-                        console.log('directory found');
-                        // append files from a sub-directory and naming it `new-subdir` within the archive
-                        archive.directory(`${fromPath}/${files[i]}/`,`${files[i]}`);
-                    }
-                    else if (fileDate > fromDate) {
-                        archive.append(fs.createReadStream(`${fromPath}/${files[i]}`), { name: `${files[i]}` });
+                    console.log(fileDate);
+                    console.log(toDate);
+                    if (fileDate>=fromDate && fileDate <= toDate) {
+                        if (stats.isDirectory()) {
+                            console.log('directory found');
+                            // append files from a sub-directory and naming it `new-subdir` within the archive
+                            archive.directory(`${fromPath}/${files[i]}/`,`${files[i]}`);
+                        }
+                        else {
+                            archive.append(fs.createReadStream(`${fromPath}/${files[i]}`), { name: `${files[i]}` });
+                        }
                     }
                     percentage = (i) / files.length * 100;
                     socket.emit('chat', `Processing path ${currentPath} : ${percentage.toFixed(2)}%`);
@@ -100,6 +107,7 @@ const fileController = {
             let to = data.to.split(',');
             let fromLength = from.length;
             let toLength = to.length;
+            console.log('from', from);
             if(data.from=="" || data.to=="" || data.zipname=="" || data.fromdate=="" || data.todate==""){
                 reject({
                     type:'error',
@@ -113,8 +121,8 @@ const fileController = {
                 });
             }
             else {
-                reject({
-                    type:'error',
+                resolve({
+                    type:'Success',
                     message:'Valid data'
                 });
             }

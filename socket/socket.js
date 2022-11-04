@@ -16,9 +16,8 @@ module.exports = (io, data) => {
                         socket.emit('chat', 'Invalid data');
                     }
                     console.log('after valres', valRes);
-                    console.log(from, 'FROM');
-                    console.log(to, 'TO');
-
+                    let from = data.from.split(',');
+                    let to = data.to.split(',');
                     for (let i = 0; i < from.length; i++) {
                         result = await fileController.archiveFile(from[i], to[i], data.fromdate, data.todate, data.zipname, socket, i + 1);
                     }
@@ -27,6 +26,7 @@ module.exports = (io, data) => {
                     result = error.message;
                 }
                 finally {
+                    console.log('Result to send', result);
                     socket.emit('chat', result);
                 }
             }
