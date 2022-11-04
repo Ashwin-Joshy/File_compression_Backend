@@ -9,17 +9,18 @@ module.exports = (io, data) => {
             }
             else {
                 try {
-                    from = data.from.split(',');
-                    to = data.to.split(',');
-                    if (to.length !== from.length) {
-                        throw new Error('No of From and To paths are not equal');
+                    console.log("reached");
+                    let valRes = await fileController.validate(data);
+                    if (valRes=='') {
+                        console.log('valRes', valRes);
+                        socket.emit('chat', 'Invalid data');
                     }
+                    console.log('after valres', valRes);
                     console.log(from, 'FROM');
                     console.log(to, 'TO');
 
                     for (let i = 0; i < from.length; i++) {
                         result = await fileController.archiveFile(from[i], to[i], data.fromdate, data.todate, data.zipname, socket, i + 1);
-
                     }
                 }
                 catch (error) {
