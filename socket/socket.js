@@ -1,7 +1,7 @@
 module.exports = (io, data) => {
-    io.emit('chat', 'This is must')
     io.on('connection', socket => {
         console.log('new connection', socket.id);
+        
         socket.on('start', async (data) => {
             let fileController = require('../controllers/fileController');
             if (fileController.status != "Idle") {
@@ -16,8 +16,8 @@ module.exports = (io, data) => {
                         socket.emit('chat', 'Invalid data');
                     }
                     console.log('after valres', valRes);
-                    let from = data.from.split(',');
-                    let to = data.to.split(',');
+                    let from = data.from
+                    let to = data.to
                     for (let i = 0; i < from.length; i++) {
                         result = await fileController.archiveFile(from[i], to[i], data.fromdate, data.todate, data.zipname, socket, i + 1);
                     }

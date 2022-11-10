@@ -20,6 +20,9 @@ const fileController = {
                 if (output == "") {
                     reject(error)
                 }
+                else if (output == undefined) {
+                    reject(error)
+                }
                 else {
                     output.end()
                     await fsp.rm(`${toPath}/${zipName}.zip`)
@@ -28,6 +31,7 @@ const fileController = {
             }
             try {
                 const files = await fsp.readdir(fromPath)
+                await fsp.readdir(toPath)
                 console.log('here 1');
                 if (files.length == 0) {
                     reject('No files found');
@@ -51,6 +55,11 @@ const fileController = {
                     console.log('throwing error');
                     handleAsyncError(err);
                 });
+                //To return the percent of the file that has been archiving
+                archive.on('progress', (progress) => {
+                    console.log('progress', progress);
+                    socket.emit('chat', `Progress ${progress.entries.processed}/${progress.entries.total}`);
+                })
 
                 //Step 4 - pipe and append files
                 archive.pipe(output);
@@ -103,12 +112,12 @@ const fileController = {
             
             console.log('data', data);
             console.log(data.from);
-            let from = data.from.split(',');
-            let to = data.to.split(',');
+            let from = data.from
+            let to = data.to
             let fromLength = from.length;
             let toLength = to.length;
             console.log('from', from);
-            if(data.from=="" || data.to=="" || data.zipname=="" || data.fromdate=="" || data.todate==""){
+            if(data.from.length==0 || data.to.length==0 || data.zipname=="" || data.fromdate=="" || data.todate==""){
                 reject({
                     type:'error',
                     message:'Invalid data'
